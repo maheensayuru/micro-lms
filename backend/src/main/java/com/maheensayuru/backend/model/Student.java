@@ -2,6 +2,8 @@ package com.maheensayuru.backend.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "students")
@@ -20,7 +22,15 @@ public class Student {
     @Column(updatable = false)
     private LocalDateTime enrolledAt = LocalDateTime.now();
 
-    // Default constructor required by JPA
+    // --- NEW MANY-TO-MANY RELATIONSHIP ---
+    @ManyToMany
+    @JoinTable(
+        name = "course_enrollments",
+        joinColumns = @JoinColumn(name = "student_id"),
+        inverseJoinColumns = @JoinColumn(name = "course_id")
+    )
+    private Set<Course> courses = new HashSet<>();
+
     public Student() {}
 
     public Student(String name, String email) {
@@ -36,4 +46,8 @@ public class Student {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
     public LocalDateTime getEnrolledAt() { return enrolledAt; }
+    
+    // New Getters/Setters for Courses
+    public Set<Course> getCourses() { return courses; }
+    public void setCourses(Set<Course> courses) { this.courses = courses; }
 }
