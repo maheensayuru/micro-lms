@@ -26,6 +26,15 @@ public class CourseController {
         return courseRepository.save(course);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<Course> updateCourse(@PathVariable Long id, @RequestBody Course courseDetails) {
+        return courseRepository.findById(id).map(course -> {
+            course.setTitle(courseDetails.getTitle());
+            course.setDescription(courseDetails.getDescription());
+            return ResponseEntity.ok(courseRepository.save(course));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCourse(@PathVariable Long id) {
         return courseRepository.findById(id).map(course -> {

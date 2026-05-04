@@ -52,4 +52,13 @@ public class StudentController {
         }
         return ResponseEntity.notFound().build(); // Return 404 if either doesn't exist
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Student> updateStudent(@PathVariable Long id, @RequestBody Student studentDetails) {
+        return studentRepository.findById(id).map(student -> {
+            student.setName(studentDetails.getName());
+            student.setEmail(studentDetails.getEmail());
+            return ResponseEntity.ok(studentRepository.save(student));
+        }).orElse(ResponseEntity.notFound().build());
+    }
 }
