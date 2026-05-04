@@ -54,7 +54,6 @@ export default function CourseDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-8 text-blue-400">Micro-LMS Dashboard</h1>
 
@@ -107,6 +106,5 @@ export default function CourseDashboard() {
           )}
         </div>
       </div>
-    </div>
   );
 }
