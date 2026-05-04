@@ -2,13 +2,18 @@ import { useState, useEffect } from 'react';
 
 export default function StudentDashboard() {
   const [students, setStudents] = useState([]);
-  const [courses, setCourses] = useState([]); // NEW: We need courses for the dropdown
+  const [courses, setCourses] = useState([]);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
 
-  // UI State for the inline enrollment dropdown
+  // UI State for Enrollment Dropdown
   const [enrollingStudentId, setEnrollingStudentId] = useState(null);
   const [selectedCourseId, setSelectedCourseId] = useState('');
+
+  // UI State for Editing Mode
+  const [editingStudentId, setEditingStudentId] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
 
   useEffect(() => {
     fetchStudents();
@@ -57,6 +62,22 @@ export default function StudentDashboard() {
     }
   };
 
+  const handleUpdateStudent = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:8081/api/students/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editName, email: editEmail }),
+      });
+      if (response.ok) {
+        fetchStudents();
+        setEditingStudentId(null); // Close the edit row
+      }
+    } catch (error) {
+      console.error('Failed to update student:', error);
+    }
+  };
+
   const handleDeleteStudent = async (id) => {
     try {
       const response = await fetch(`http://localhost:8081/api/students/${id}`, {
@@ -77,13 +98,25 @@ export default function StudentDashboard() {
         method: 'POST'
       });
       if (response.ok) {
-        fetchStudents(); // Refresh to see the new course badge
+        fetchStudents();
         setEnrollingStudentId(null);
         setSelectedCourseId('');
       }
     } catch (error) {
       console.error('Failed to enroll student:', error);
     }
+  };
+
+  const startEditing = (student) => {
+    setEditingStudentId(student.id);
+    setEditName(student.name);
+    setEditEmail(student.email);
+    setEnrollingStudentId(null); // Close enrollment dropdown if it was open
+  };
+
+  const startEnrolling = (studentId) => {
+    setEnrollingStudentId(studentId);
+    setEditingStudentId(null); // Close edit mode if it was open
   };
 
   return (
@@ -133,56 +166,98 @@ export default function StudentDashboard() {
           <tbody>
             {students.map((student) => (
               <tr key={student.id} className="border-b border-gray-700 hover:bg-gray-750">
-                <td className="p-4 font-medium text-white">{student.name}</td>
-                <td className="p-4">{student.email}</td>
-                <td className="p-4">
-                  {/* Map through the student's courses and render blue badges */}
-                  {student.courses && student.courses.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {student.courses.map(course => (
-                        <span key={course.id} className="bg-blue-900/50 text-blue-300 text-xs px-2 py-1 rounded border border-blue-700/50 shadow-sm">
-                          {course.title}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-gray-500 italic text-sm">Not enrolled in any courses</span>
-                  )}
-                </td>
-                <td className="p-4 text-right">
-                  {/* Toggle between Enrollment Dropdown or standard action buttons */}
-                  {enrollingStudentId === student.id ? (
-                    <div className="flex items-center justify-end gap-2">
-                      <select
-                        className="bg-gray-700 text-white text-sm rounded p-1.5 border border-gray-500 focus:outline-none focus:border-green-500"
-                        value={selectedCourseId}
-                        onChange={(e) => setSelectedCourseId(e.target.value)}
-                      >
-                        <option value="">Select a course...</option>
-                        {courses.map(course => (
-                          <option key={course.id} value={course.id}>{course.title}</option>
-                        ))}
-                      </select>
-                      <button onClick={() => handleEnroll(student.id)} className="text-green-400 hover:text-green-300 text-sm font-semibold ml-1">Save</button>
-                      <button onClick={() => setEnrollingStudentId(null)} className="text-gray-400 hover:text-gray-300 text-sm ml-2">Cancel</button>
-                    </div>
-                  ) : (
-                    <div className="flex justify-end gap-4">
-                      <button
-                        onClick={() => setEnrollingStudentId(student.id)}
-                        className="text-blue-400 hover:text-blue-300 text-sm font-semibold transition duration-200"
-                      >
-                        Enroll
-                      </button>
-                      <button
-                        onClick={() => handleDeleteStudent(student.id)}
-                        className="text-red-400 hover:text-red-300 text-sm font-semibold transition duration-200"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  )}
-                </td>
+                {editingStudentId === student.id ? (
+                  /* --- EDIT MODE ROW --- */
+                  <>
+                    <td className="p-4">
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="bg-gray-700 border border-gray-500 rounded p-1.5 text-white focus:outline-none focus:border-green-500 w-full"
+                      />
+                    </td>
+                    <td className="p-4">
+                      <input
+                        type="email"
+                        value={editEmail}
+                        onChange={(e) => setEditEmail(e.target.value)}
+                        className="bg-gray-700 border border-gray-500 rounded p-1.5 text-white focus:outline-none focus:border-green-500 w-full"
+                      />
+                    </td>
+                    <td className="p-4 opacity-50 pointer-events-none">
+                      {/* Dim courses while editing to focus user on the inputs */}
+                      {student.courses && student.courses.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {student.courses.map(course => (
+                            <span key={course.id} className="bg-blue-900/50 text-blue-300 text-xs px-2 py-1 rounded border border-blue-700/50 shadow-sm">
+                              {course.title}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-gray-500 italic text-sm">Not enrolled</span>
+                      )}
+                    </td>
+                    <td className="p-4 text-right">
+                      <div className="flex justify-end gap-3">
+                        <button onClick={() => handleUpdateStudent(student.id)} className="text-green-400 hover:text-green-300 text-sm font-bold">Save</button>
+                        <button onClick={() => setEditingStudentId(null)} className="text-gray-400 hover:text-gray-300 text-sm font-bold">Cancel</button>
+                      </div>
+                    </td>
+                  </>
+                ) : (
+                  /* --- NORMAL DISPLAY ROW --- */
+                  <>
+                    <td className="p-4 font-medium text-white">{student.name}</td>
+                    <td className="p-4">{student.email}</td>
+                    <td className="p-4">
+                      {student.courses && student.courses.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {student.courses.map(course => (
+                            <span key={course.id} className="bg-blue-900/50 text-blue-300 text-xs px-2 py-1 rounded border border-blue-700/50 shadow-sm">
+                              {course.title}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-gray-500 italic text-sm">Not enrolled in any courses</span>
+                      )}
+                    </td>
+                    <td className="p-4 text-right">
+                      {enrollingStudentId === student.id ? (
+                        /* Enrollment Dropdown */
+                        <div className="flex items-center justify-end gap-2">
+                          <select
+                            className="bg-gray-700 text-white text-sm rounded p-1.5 border border-gray-500 focus:outline-none focus:border-green-500"
+                            value={selectedCourseId}
+                            onChange={(e) => setSelectedCourseId(e.target.value)}
+                          >
+                            <option value="">Select a course...</option>
+                            {courses.map(course => (
+                              <option key={course.id} value={course.id}>{course.title}</option>
+                            ))}
+                          </select>
+                          <button onClick={() => handleEnroll(student.id)} className="text-green-400 hover:text-green-300 text-sm font-semibold ml-1">Save</button>
+                          <button onClick={() => setEnrollingStudentId(null)} className="text-gray-400 hover:text-gray-300 text-sm ml-2">Cancel</button>
+                        </div>
+                      ) : (
+                        /* Default Action Buttons */
+                        <div className="flex justify-end gap-3">
+                          <button onClick={() => startEnrolling(student.id)} className="text-blue-400 hover:text-blue-300 text-sm font-semibold transition duration-200">
+                            Enroll
+                          </button>
+                          <button onClick={() => startEditing(student)} className="text-gray-400 hover:text-white text-sm font-semibold transition duration-200">
+                            Edit
+                          </button>
+                          <button onClick={() => handleDeleteStudent(student.id)} className="text-red-400 hover:text-red-300 text-sm font-semibold transition duration-200">
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </>
+                )}
               </tr>
             ))}
             {students.length === 0 && (
