@@ -1,13 +1,24 @@
 import { useState } from 'react';
 import CourseDashboard from './components/CourseDashboard';
 import StudentDashboard from './components/StudentDashboard';
-import StatsBar from './components/StatsBar'; // Import our new component
+import StatsBar from './components/StatsBar';
+import Toast from './components/Toast'; // Import our new Toast!
 
 function App() {
   const [activeTab, setActiveTab] = useState('courses');
+  
+  // --- TOAST STATE ---
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState('success');
+
+  // The function we will pass to our dashboards to trigger pop-ups
+  const showToast = (message, type = 'success') => {
+    setToastMessage(message);
+    setToastType(type);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 font-sans">
+    <div className="min-h-screen bg-gray-900 text-gray-100 font-sans relative">
       {/* Top Navigation Bar */}
       <nav className="bg-gray-800 border-b border-gray-700 p-4 sticky top-0 z-10 shadow-md">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
@@ -35,13 +46,22 @@ function App() {
         </div>
       </nav>
 
-      {/* Main Content Area */}
-      <main className="p-8">
-        {/* The Stats Bar lives globally above the tabs! */}
+      <main className="p-8 pb-24">
         <StatsBar /> 
         
-        {activeTab === 'courses' ? <CourseDashboard /> : <StudentDashboard />}
+        {/* Pass the showToast function down as a prop to our components */}
+        {activeTab === 'courses' ? 
+          <CourseDashboard showToast={showToast} /> : 
+          <StudentDashboard showToast={showToast} />
+        }
       </main>
+
+      {/* The Global Toast Component */}
+      <Toast 
+        message={toastMessage} 
+        type={toastType} 
+        onClose={() => setToastMessage('')} 
+      />
     </div>
   );
 }

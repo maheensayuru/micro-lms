@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-export default function CourseDashboard() {
+export default function CourseDashboard({ showToast }) {
   // --- CORE COURSE STATE ---
   const [courses, setCourses] = useState([]);
   const [title, setTitle] = useState('');
@@ -44,6 +44,7 @@ export default function CourseDashboard() {
         body: JSON.stringify({ title, description }),
       });
       if (response.ok) { fetchCourses(); setTitle(''); setDescription(''); }
+      showToast('Course successfully created!');
     } catch (error) { console.error('Failed to add course:', error); }
   };
 

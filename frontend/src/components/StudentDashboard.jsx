@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-export default function StudentDashboard() {
+export default function StudentDashboard({ showToast }) {
   const [students, setStudents] = useState([]);
   const [courses, setCourses] = useState([]);
   const [name, setName] = useState('');
@@ -53,6 +53,7 @@ export default function StudentDashboard() {
         fetchStudents();
         setName('');
         setEmail('');
+        showToast('Student enrolled successfully!');
       }
     } catch (error) { console.error('Failed to add student:', error); }
   };
