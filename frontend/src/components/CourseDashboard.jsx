@@ -6,6 +6,9 @@ export default function CourseDashboard() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
 
+  // --- SEARCH STATE ---
+  const [searchTerm, setSearchTerm] = useState('');
+
   // --- EDITING STATE ---
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
@@ -22,7 +25,6 @@ export default function CourseDashboard() {
     fetchCourses();
   }, []);
 
-  // --- COURSE API LOGIC ---
   const fetchCourses = async () => {
     try {
       const response = await fetch('http://localhost:8081/api/courses');
@@ -107,7 +109,6 @@ export default function CourseDashboard() {
     } catch (error) { console.error('Failed to delete assignment:', error); }
   };
 
-  // --- NEW: TOGGLE ASSIGNMENT LOGIC ---
   const handleToggleAssignment = async (assignment) => {
     try {
       const response = await fetch(`http://localhost:8081/api/assignments/${assignment.id}/toggle`, { 
@@ -117,14 +118,18 @@ export default function CourseDashboard() {
     } catch (error) { console.error('Failed to toggle assignment:', error); }
   };
 
+  // --- FILTER LOGIC ---
+  // This instantly filters the courses array based on what is typed in the search bar
+  const filteredCourses = courses.filter(course => 
+    course.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    course.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   // --- RENDER: ASSIGNMENT VIEW ---
   if (activeCourse) {
     return (
       <div className="max-w-4xl mx-auto">
-        <button 
-          onClick={() => setActiveCourse(null)} 
-          className="text-gray-400 hover:text-white mb-6 flex items-center gap-2 transition duration-200"
-        >
+        <button onClick={() => setActiveCourse(null)} className="text-gray-400 hover:text-white mb-6 flex items-center gap-2 transition duration-200">
           ← Back to Courses
         </button>
         
@@ -133,7 +138,6 @@ export default function CourseDashboard() {
           <p className="text-gray-400">{activeCourse.description}</p>
         </div>
 
-        {/* Add Assignment Form */}
         <form onSubmit={handleAddAssignment} className="bg-gray-800 p-6 rounded-lg shadow-md mb-8">
           <h2 className="text-xl font-semibold mb-4 text-white">Create New Task</h2>
           <div className="flex flex-col md:flex-row gap-4 mb-4">
@@ -144,46 +148,25 @@ export default function CourseDashboard() {
           <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded transition duration-200">Publish Assignment</button>
         </form>
 
-        {/* Assignments List (Now with interactive toggle!) */}
         <div className="space-y-4">
           {assignments.map(task => (
             <div key={task.id} className={`p-5 rounded-lg flex justify-between items-center shadow-sm transition duration-300 border ${task.completed ? 'bg-gray-800/40 border-gray-700 opacity-60' : 'bg-gray-800 border-gray-600 hover:border-gray-500'}`}>
-              
               <div className="flex items-start gap-4">
-                {/* Custom Interactive Checkbox */}
-                <button 
-                  onClick={() => handleToggleAssignment(task)} 
-                  className={`mt-1 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors duration-200 focus:outline-none ${task.completed ? 'bg-green-500 border-green-500' : 'border-gray-500 hover:border-green-400'}`}
-                >
-                  {task.completed && (
-                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
+                <button onClick={() => handleToggleAssignment(task)} className={`mt-1 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors duration-200 focus:outline-none ${task.completed ? 'bg-green-500 border-green-500' : 'border-gray-500 hover:border-green-400'}`}>
+                  {task.completed && <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                 </button>
-
-                {/* Task Text Content */}
                 <div>
                   <h3 className={`text-lg font-bold flex items-center gap-3 transition-colors duration-200 ${task.completed ? 'text-gray-500 line-through' : 'text-white'}`}>
                     {task.title}
-                    <span className={`text-xs font-medium px-2 py-1 rounded border ${task.completed ? 'bg-gray-700 text-gray-400 border-gray-600' : 'bg-red-900/50 text-red-300 border-red-700/50'}`}>
-                      Due: {task.dueDate}
-                    </span>
+                    <span className={`text-xs font-medium px-2 py-1 rounded border ${task.completed ? 'bg-gray-700 text-gray-400 border-gray-600' : 'bg-red-900/50 text-red-300 border-red-700/50'}`}>Due: {task.dueDate}</span>
                   </h3>
-                  <p className={`text-sm mt-1 transition-colors duration-200 ${task.completed ? 'text-gray-600' : 'text-gray-400'}`}>
-                    {task.description}
-                  </p>
+                  <p className={`text-sm mt-1 transition-colors duration-200 ${task.completed ? 'text-gray-600' : 'text-gray-400'}`}>{task.description}</p>
                 </div>
               </div>
-
-              <button onClick={() => handleDeleteAssignment(task.id)} className="text-red-400 hover:text-red-300 text-sm font-semibold transition duration-200 px-4 py-2 hover:bg-red-900/20 rounded ml-4">
-                Delete
-              </button>
+              <button onClick={() => handleDeleteAssignment(task.id)} className="text-red-400 hover:text-red-300 text-sm font-semibold transition duration-200 px-4 py-2 hover:bg-red-900/20 rounded ml-4">Delete</button>
             </div>
           ))}
-          {assignments.length === 0 && (
-            <p className="text-gray-500 text-center py-8 bg-gray-800 rounded-lg border border-dashed border-gray-700">No assignments published for this course yet.</p>
-          )}
+          {assignments.length === 0 && <p className="text-gray-500 text-center py-8 bg-gray-800 rounded-lg border border-dashed border-gray-700">No assignments published for this course yet.</p>}
         </div>
       </div>
     );
@@ -192,9 +175,10 @@ export default function CourseDashboard() {
   // --- RENDER: MAIN COURSE GRID ---
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8 text-blue-400">Micro-LMS Dashboard</h1>
+      <div className="flex justify-between items-end mb-8">
+        <h1 className="text-3xl font-bold text-blue-400">Course Management</h1>
+      </div>
 
-      {/* Add Course Form */}
       <form onSubmit={handleAddCourse} className="bg-gray-800 p-6 rounded-lg shadow-md mb-8">
         <h2 className="text-xl font-semibold mb-4 text-white">Create New Course</h2>
         <div className="flex flex-col gap-4">
@@ -204,12 +188,27 @@ export default function CourseDashboard() {
         </div>
       </form>
 
-      {/* Course List Grid */}
+      {/* --- NEW SEARCH BAR --- */}
+      <div className="mb-6 relative">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        <input
+          type="text"
+          placeholder="Search courses by title or description..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full bg-gray-800 border border-gray-700 rounded-lg py-3 pl-10 pr-4 text-white focus:outline-none focus:border-blue-500 transition-colors duration-200"
+        />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {courses.map((course) => (
+        {/* WE MAP OVER filteredCourses NOW INSTEAD OF courses */}
+        {filteredCourses.map((course) => (
           <div key={course.id} className="bg-gray-800 border border-gray-700 p-6 rounded-lg shadow-md flex flex-col justify-between">
             {editingId === course.id ? (
-              /* Edit Mode */
               <div className="flex flex-col gap-3">
                 <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="bg-gray-700 border border-gray-500 rounded p-1 text-white focus:outline-none focus:border-blue-400 text-lg font-bold" />
                 <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} className="bg-gray-700 border border-gray-500 rounded p-1 text-white focus:outline-none focus:border-blue-400 text-sm" rows="3" />
@@ -219,7 +218,6 @@ export default function CourseDashboard() {
                 </div>
               </div>
             ) : (
-              /* Display Mode */
               <>
                 <div>
                   <h3 className="text-xl font-bold text-white mb-2">{course.title}</h3>
@@ -227,10 +225,7 @@ export default function CourseDashboard() {
                 </div>
                 
                 <div className="border-t border-gray-700 pt-4 mt-2">
-                  <button 
-                    onClick={() => openAssignments(course)}
-                    className="w-full bg-blue-900/30 hover:bg-blue-800/40 text-blue-300 border border-blue-700/50 font-semibold py-2 rounded transition duration-200 mb-3"
-                  >
+                  <button onClick={() => openAssignments(course)} className="w-full bg-blue-900/30 hover:bg-blue-800/40 text-blue-300 border border-blue-700/50 font-semibold py-2 rounded transition duration-200 mb-3">
                     Manage Assignments
                   </button>
                   <div className="flex justify-end gap-4">
@@ -242,6 +237,9 @@ export default function CourseDashboard() {
             )}
           </div>
         ))}
+        {filteredCourses.length === 0 && courses.length > 0 && (
+          <p className="text-gray-500 col-span-full text-center py-8">No courses match your search.</p>
+        )}
         {courses.length === 0 && (
           <p className="text-gray-500 col-span-full text-center py-8">No courses available. Create one above!</p>
         )}
