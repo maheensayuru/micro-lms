@@ -27,6 +27,11 @@ public class StudentController {
         return studentRepository.findAll();
     }
 
+    @GetMapping("/count")
+    public long getStudentCount() {
+        return studentRepository.count();
+    }
+
     @PostMapping
     public Student createStudent(@RequestBody Student student) {
         return studentRepository.save(student);

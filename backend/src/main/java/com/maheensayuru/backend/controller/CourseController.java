@@ -21,6 +21,11 @@ public class CourseController {
         return courseRepository.findAll();
     }
 
+    @GetMapping("/count")
+    public long getCourseCount() {
+        return courseRepository.count();
+    }
+
     @PostMapping
     public Course createCourse(@RequestBody Course course) {
         return courseRepository.save(course);

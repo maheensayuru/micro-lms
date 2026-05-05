@@ -14,6 +14,11 @@ import java.util.List;
 @CrossOrigin(origins = "http://localhost:5173")
 public class AssignmentController {
 
+    @GetMapping("/assignments/count")
+    public long getAssignmentCount() {
+        return assignmentRepository.count();
+    }
+
     @Autowired
     private AssignmentRepository assignmentRepository;
 
