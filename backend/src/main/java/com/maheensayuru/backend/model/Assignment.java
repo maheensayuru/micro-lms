@@ -19,6 +19,10 @@ public class Assignment {
     @Column(nullable = false)
     private String dueDate; // Stored as YYYY-MM-DD string for simplicity
 
+    // --- NEW PROPERTY ---
+    @Column(nullable = false)
+    private boolean completed = false; // Defaults to false when created
+
     // The Many-to-One relationship to the Course
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "course_id", nullable = false)
@@ -38,4 +42,9 @@ public class Assignment {
     public void setDueDate(String dueDate) { this.dueDate = dueDate; }
     public Course getCourse() { return course; }
     public void setCourse(Course course) { this.course = course; }
+
+    // --- NEW GETTER/SETTER (Add to the very bottom) ---
+    public boolean isCompleted() { return completed; }
+    public void setCompleted(boolean completed) { this.completed = completed; }
+    
 }

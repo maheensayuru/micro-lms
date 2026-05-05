@@ -12,7 +12,7 @@ export default function CourseDashboard() {
   const [editDescription, setEditDescription] = useState('');
 
   // --- ASSIGNMENT VIEW STATE ---
-  const [activeCourse, setActiveCourse] = useState(null); // Which course's assignments are we viewing?
+  const [activeCourse, setActiveCourse] = useState(null); 
   const [assignments, setAssignments] = useState([]);
   const [taskTitle, setTaskTitle] = useState('');
   const [taskDesc, setTaskDesc] = useState('');
@@ -107,6 +107,16 @@ export default function CourseDashboard() {
     } catch (error) { console.error('Failed to delete assignment:', error); }
   };
 
+  // --- NEW: TOGGLE ASSIGNMENT LOGIC ---
+  const handleToggleAssignment = async (assignment) => {
+    try {
+      const response = await fetch(`http://localhost:8081/api/assignments/${assignment.id}/toggle`, { 
+        method: 'PUT' 
+      });
+      if (response.ok) fetchAssignments(activeCourse.id);
+    } catch (error) { console.error('Failed to toggle assignment:', error); }
+  };
+
   // --- RENDER: ASSIGNMENT VIEW ---
   if (activeCourse) {
     return (
@@ -134,20 +144,39 @@ export default function CourseDashboard() {
           <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded transition duration-200">Publish Assignment</button>
         </form>
 
-        {/* Assignments List */}
+        {/* Assignments List (Now with interactive toggle!) */}
         <div className="space-y-4">
           {assignments.map(task => (
-            <div key={task.id} className="bg-gray-800 border border-gray-700 p-5 rounded-lg flex justify-between items-center shadow-sm hover:border-gray-600 transition duration-200">
-              <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-3">
-                  {task.title}
-                  <span className="text-xs font-medium bg-red-900/50 text-red-300 px-2 py-1 rounded border border-red-700/50">
-                    Due: {task.dueDate}
-                  </span>
-                </h3>
-                <p className="text-gray-400 text-sm mt-1">{task.description}</p>
+            <div key={task.id} className={`p-5 rounded-lg flex justify-between items-center shadow-sm transition duration-300 border ${task.completed ? 'bg-gray-800/40 border-gray-700 opacity-60' : 'bg-gray-800 border-gray-600 hover:border-gray-500'}`}>
+              
+              <div className="flex items-start gap-4">
+                {/* Custom Interactive Checkbox */}
+                <button 
+                  onClick={() => handleToggleAssignment(task)} 
+                  className={`mt-1 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors duration-200 focus:outline-none ${task.completed ? 'bg-green-500 border-green-500' : 'border-gray-500 hover:border-green-400'}`}
+                >
+                  {task.completed && (
+                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+
+                {/* Task Text Content */}
+                <div>
+                  <h3 className={`text-lg font-bold flex items-center gap-3 transition-colors duration-200 ${task.completed ? 'text-gray-500 line-through' : 'text-white'}`}>
+                    {task.title}
+                    <span className={`text-xs font-medium px-2 py-1 rounded border ${task.completed ? 'bg-gray-700 text-gray-400 border-gray-600' : 'bg-red-900/50 text-red-300 border-red-700/50'}`}>
+                      Due: {task.dueDate}
+                    </span>
+                  </h3>
+                  <p className={`text-sm mt-1 transition-colors duration-200 ${task.completed ? 'text-gray-600' : 'text-gray-400'}`}>
+                    {task.description}
+                  </p>
+                </div>
               </div>
-              <button onClick={() => handleDeleteAssignment(task.id)} className="text-red-400 hover:text-red-300 text-sm font-semibold transition duration-200 px-4 py-2 hover:bg-red-900/20 rounded">
+
+              <button onClick={() => handleDeleteAssignment(task.id)} className="text-red-400 hover:text-red-300 text-sm font-semibold transition duration-200 px-4 py-2 hover:bg-red-900/20 rounded ml-4">
                 Delete
               </button>
             </div>
@@ -165,7 +194,7 @@ export default function CourseDashboard() {
     <div className="max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold mb-8 text-blue-400">Micro-LMS Dashboard</h1>
 
-      {/* Add Course Form (Same as before) */}
+      {/* Add Course Form */}
       <form onSubmit={handleAddCourse} className="bg-gray-800 p-6 rounded-lg shadow-md mb-8">
         <h2 className="text-xl font-semibold mb-4 text-white">Create New Course</h2>
         <div className="flex flex-col gap-4">

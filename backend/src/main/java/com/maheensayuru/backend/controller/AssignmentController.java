@@ -35,6 +35,15 @@ public class AssignmentController {
         }).orElse(ResponseEntity.notFound().build());
     }
 
+    // --- NEW TOGGLE ENDPOINT ---
+    @PutMapping("/assignments/{id}/toggle")
+    public ResponseEntity<Assignment> toggleAssignmentStatus(@PathVariable Long id) {
+        return assignmentRepository.findById(id).map(assignment -> {
+            assignment.setCompleted(!assignment.isCompleted()); // Flips true to false, or false to true
+            return ResponseEntity.ok(assignmentRepository.save(assignment));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
     // Delete a specific assignment
     @DeleteMapping("/assignments/{id}")
     public ResponseEntity<?> deleteAssignment(@PathVariable Long id) {
