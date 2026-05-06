@@ -10,7 +10,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/courses")
-@CrossOrigin(origins = "http://localhost:5173") // Allows Vite React frontend to connect
+@CrossOrigin(origins = "*") // Allows Vite React frontend to connect
 public class CourseController {
 
     @Autowired
