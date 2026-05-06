@@ -36,6 +36,11 @@ public class CourseController {
         return courseRepository.findById(id).map(course -> {
             course.setTitle(courseDetails.getTitle());
             course.setDescription(courseDetails.getDescription());
+            // NEW FIELDS
+            course.setInstructorName(courseDetails.getInstructorName());
+            course.setCreditHours(courseDetails.getCreditHours());
+            course.setStatus(courseDetails.getStatus());
+            
             return ResponseEntity.ok(courseRepository.save(course));
         }).orElse(ResponseEntity.notFound().build());
     }

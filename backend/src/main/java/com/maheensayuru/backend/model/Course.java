@@ -17,6 +17,15 @@ public class Course {
     @Column(length = 1000)
     private String description;
 
+    @Column(name = "instructor_name")
+    private String instructorName;
+
+    @Column(name = "credit_hours")
+    private int creditHours;
+
+    @Column(nullable = false)
+    private String status = "Active"; // Defaults to Active when a new course is made
+
     @Column(updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -36,4 +45,11 @@ public class Course {
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+    // --- NEW GETTERS & SETTERS 
+    public String getInstructorName() { return instructorName; }
+    public void setInstructorName(String instructorName) { this.instructorName = instructorName; }
+    public int getCreditHours() { return creditHours; }
+    public void setCreditHours(int creditHours) { this.creditHours = creditHours; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }
