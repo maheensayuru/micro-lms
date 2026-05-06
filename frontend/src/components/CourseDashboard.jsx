@@ -4,7 +4,7 @@ export default function CourseDashboard({ showToast }) {
   const [courses, setCourses] = useState([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  // NEW ADD STATE
+  
   const [instructor, setInstructor] = useState('');
   const [credits, setCredits] = useState(3);
   const [status, setStatus] = useState('Active');
@@ -14,7 +14,7 @@ export default function CourseDashboard({ showToast }) {
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
-  // NEW EDIT STATE
+  
   const [editInstructor, setEditInstructor] = useState('');
   const [editCredits, setEditCredits] = useState(3);
   const [editStatus, setEditStatus] = useState('Active');
@@ -24,6 +24,9 @@ export default function CourseDashboard({ showToast }) {
   const [taskTitle, setTaskTitle] = useState('');
   const [taskDesc, setTaskDesc] = useState('');
   const [taskDate, setTaskDate] = useState('');
+
+  // --- NEW: ASSIGNMENT FILTER STATE ---
+  const [assignmentFilter, setAssignmentFilter] = useState('All'); // 'All', 'Pending', 'Completed'
 
   useEffect(() => { fetchCourses(); }, []);
 
@@ -85,13 +88,19 @@ export default function CourseDashboard({ showToast }) {
   };
 
   // --- ASSIGNMENT API LOGIC ---
-  const openAssignments = async (course) => { setActiveCourse(course); fetchAssignments(course.id); };
+  const openAssignments = async (course) => { 
+    setActiveCourse(course); 
+    setAssignmentFilter('All'); // Reset filter when opening a new course
+    fetchAssignments(course.id); 
+  };
+  
   const fetchAssignments = async (courseId) => {
     try {
       const response = await fetch(`http://localhost:8081/api/courses/${courseId}/assignments`);
       if (response.ok) setAssignments(await response.json());
     } catch (error) { console.error('Failed to fetch assignments:', error); }
   };
+
   const handleAddAssignment = async (e) => {
     e.preventDefault();
     try {
@@ -107,12 +116,14 @@ export default function CourseDashboard({ showToast }) {
       }
     } catch (error) { console.error('Failed to add assignment:', error); }
   };
+
   const handleDeleteAssignment = async (assignmentId) => {
     try {
       const response = await fetch(`http://localhost:8081/api/assignments/${assignmentId}`, { method: 'DELETE' });
       if (response.ok) { fetchAssignments(activeCourse.id); showToast('Assignment deleted', 'error'); }
     } catch (error) { console.error('Failed to delete assignment:', error); }
   };
+
   const handleToggleAssignment = async (assignment) => {
     try {
       const response = await fetch(`http://localhost:8081/api/assignments/${assignment.id}/toggle`, { method: 'PUT' });
@@ -120,15 +131,22 @@ export default function CourseDashboard({ showToast }) {
     } catch (error) { console.error('Failed to toggle assignment:', error); }
   };
 
-  // Filter now includes instructor name!
+  // --- FILTER LOGIC ---
   const filteredCourses = courses.filter(course => 
     course.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
     course.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (course.instructorName && course.instructorName.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  // NEW: Filter the assignments array based on the selected toggle state
+  const filteredAssignments = assignments.filter(task => {
+    if (assignmentFilter === 'All') return true;
+    if (assignmentFilter === 'Pending') return !task.completed;
+    if (assignmentFilter === 'Completed') return task.completed;
+    return true;
+  });
+
   if (activeCourse) {
-    // ... (Keep the exact same activeCourse assignment return block from before) ...
     return (
       <div className="max-w-4xl mx-auto">
         <button onClick={() => setActiveCourse(null)} className="text-gray-400 hover:text-white mb-6 flex items-center gap-2 transition duration-200">← Back to Courses</button>
@@ -136,6 +154,7 @@ export default function CourseDashboard({ showToast }) {
           <h1 className="text-3xl font-bold text-blue-400 mb-2">{activeCourse.title} Assignments</h1>
           <p className="text-gray-400">{activeCourse.description}</p>
         </div>
+        
         <form onSubmit={handleAddAssignment} className="bg-gray-800 p-6 rounded-lg shadow-md mb-8">
           <h2 className="text-xl font-semibold mb-4 text-white">Create New Task</h2>
           <div className="flex flex-col md:flex-row gap-4 mb-4">
@@ -145,8 +164,32 @@ export default function CourseDashboard({ showToast }) {
           <textarea placeholder="Task Description Details..." value={taskDesc} onChange={(e) => setTaskDesc(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded p-2 text-white focus:outline-none focus:border-blue-500 mb-4" rows="2" />
           <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded transition duration-200">Publish Assignment</button>
         </form>
+
+        {/* --- NEW: ASSIGNMENT FILTER BUTTONS --- */}
+        <div className="flex gap-3 mb-6">
+          <button 
+            onClick={() => setAssignmentFilter('All')} 
+            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition duration-200 ${assignmentFilter === 'All' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700 hover:text-white'}`}
+          >
+            All Tasks ({assignments.length})
+          </button>
+          <button 
+            onClick={() => setAssignmentFilter('Pending')} 
+            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition duration-200 ${assignmentFilter === 'Pending' ? 'bg-yellow-600 text-white' : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700 hover:text-white'}`}
+          >
+            Pending ({assignments.filter(a => !a.completed).length})
+          </button>
+          <button 
+            onClick={() => setAssignmentFilter('Completed')} 
+            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition duration-200 ${assignmentFilter === 'Completed' ? 'bg-green-600 text-white' : 'bg-gray-800 text-gray-400 border border-gray-700 hover:bg-gray-700 hover:text-white'}`}
+          >
+            Completed ({assignments.filter(a => a.completed).length})
+          </button>
+        </div>
+
         <div className="space-y-4">
-          {assignments.map(task => (
+          {/* We map over filteredAssignments now instead of assignments */}
+          {filteredAssignments.map(task => (
             <div key={task.id} className={`p-5 rounded-lg flex justify-between items-center shadow-sm transition duration-300 border ${task.completed ? 'bg-gray-800/40 border-gray-700 opacity-60' : 'bg-gray-800 border-gray-600 hover:border-gray-500'}`}>
               <div className="flex items-start gap-4">
                 <button onClick={() => handleToggleAssignment(task)} className={`mt-1 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors duration-200 focus:outline-none ${task.completed ? 'bg-green-500 border-green-500' : 'border-gray-500 hover:border-green-400'}`}>
@@ -163,19 +206,20 @@ export default function CourseDashboard({ showToast }) {
               <button onClick={() => handleDeleteAssignment(task.id)} className="text-red-400 hover:text-red-300 text-sm font-semibold transition duration-200 px-4 py-2 hover:bg-red-900/20 rounded ml-4">Delete</button>
             </div>
           ))}
+          {filteredAssignments.length === 0 && assignments.length > 0 && <p className="text-gray-500 text-center py-8 bg-gray-800 rounded-lg border border-dashed border-gray-700">No tasks match this filter.</p>}
           {assignments.length === 0 && <p className="text-gray-500 text-center py-8 bg-gray-800 rounded-lg border border-dashed border-gray-700">No assignments published yet.</p>}
         </div>
       </div>
     );
   }
 
+  // ... (Keep the exact same MAIN COURSE GRID return block from the previous step!)
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex justify-between items-end mb-8">
         <h1 className="text-3xl font-bold text-blue-400">Course Management</h1>
       </div>
 
-      {/* --- UPGRADED CREATE FORM --- */}
       <form onSubmit={handleAddCourse} className="bg-gray-800 p-6 rounded-lg shadow-md mb-8">
         <h2 className="text-xl font-semibold mb-4 text-white">Create New Course</h2>
         <div className="flex flex-col gap-4">
@@ -203,7 +247,6 @@ export default function CourseDashboard({ showToast }) {
         {filteredCourses.map((course) => (
           <div key={course.id} className={`bg-gray-800 border border-gray-700 p-6 rounded-lg shadow-md flex flex-col justify-between ${course.status === 'Archived' ? 'opacity-75' : ''}`}>
             {editingId === course.id ? (
-              /* --- UPGRADED EDIT FORM --- */
               <div className="flex flex-col gap-3">
                 <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="bg-gray-700 border border-gray-500 rounded p-1 text-white focus:outline-none focus:border-blue-400 font-bold" />
                 <input type="text" value={editInstructor} onChange={(e) => setEditInstructor(e.target.value)} placeholder="Instructor" className="bg-gray-700 border border-gray-500 rounded p-1 text-white focus:outline-none focus:border-blue-400 text-sm" />
@@ -221,7 +264,6 @@ export default function CourseDashboard({ showToast }) {
                 </div>
               </div>
             ) : (
-              /* --- UPGRADED DISPLAY CARD --- */
               <>
                 <div>
                   <div className="flex justify-between items-start mb-2">
